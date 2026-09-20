@@ -68,7 +68,7 @@ Every role gets emailed whenever a request lands in their court. Ties directly i
  
 ## Sending real email now (Gmail SMTP)
  
-Resolved earlier than planned — was going to wait until deployment, doing it now instead. This replaces `letter_opener` in development (which only *previewed* mail); development now sends for real.
+Resolved earlier than planned — doing it now instead. This replaces `letter_opener` in development (which only *previewed* mail); development now sends for real.
  
 **Manual setup (browser, not Cursor — one time):**
 1. Pick the Gmail account to send from — a dedicated project account is cleaner than a personal one (professional sender identity, doesn't expose your own address once real people are getting these emails), but technically either works and nothing below changes based on which.
@@ -90,7 +90,7 @@ GMAIL_APP_PASSWORD=xxxxxxxxxxxxxxxx
  
 **Expected output:** a real email lands in a real inbox within a minute or two — check spam the first time, Gmail sometimes flags a freshly-configured sender initially. Once confirmed, switch back to `deliver_later` everywhere per Step 3's plan.
  
-**Worth knowing, not urgent:** Gmail SMTP caps regular accounts at 500 sends/day (2000 for Workspace) — plenty for now, but if this ever gets deployed at real scale, a dedicated transactional provider (Postmark, SendGrid, Resend) is still the better long-term answer — better deliverability, and Gmail's terms aren't really meant for automated app traffic at volume. Fine to revisit that later; not a blocker now.
+**Worth knowing, not urgent:** Gmail SMTP caps regular accounts at 500 sends/day (2000 for Workspace) — plenty for development and light use. A dedicated transactional provider (Postmark, SendGrid, Resend) is a better long-term answer for higher volume and deliverability. Fine to revisit later; not a blocker now.
  
 ---
 
@@ -123,8 +123,6 @@ Automated emails when a request **lands in someone's court**, plus outcome email
 | Test delivery | `:test` + Active Job `:test` (never hits the network) |
 | From address | `SCATS <#{ENV['GMAIL_USERNAME']}>` (fallback `noreply@scats.local` in test) |
 | Secrets template | [`.env.example`](../.env.example) (real `.env` gitignored) |
-
-Production SMTP / transactional provider still deferred for deploy at scale.
 
 ### Mailer
 
@@ -164,9 +162,8 @@ In-app `DeanApprovalNotificationJob` still runs on dean approve alongside email.
 
 1. Ensure `.env` has Gmail App Password credentials; `bundle install`.
 2. `bin/rails s` / console: `RequestMailer.…(…).deliver_now` should land in a real inbox (check spam once).
-3. App flows use `deliver_later` (needs the server / Solid Queue in production).
+3. App flows use `deliver_later` (needs the Rails server / Solid Queue worker running).
 
 ### Still deferred
 
-- Production SMTP / transactional provider (Postmark, SendGrid, Resend) at real scale.
 - Making phone optional / self-serve profile edit.

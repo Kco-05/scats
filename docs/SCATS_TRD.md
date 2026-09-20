@@ -14,7 +14,7 @@ Browser (Turbo Drive/Frames + Stimulus)
         │
 Rails app (MVC, Devise, Pundit)
         │
-PostgreSQL  +  ActiveStorage (local disk in dev → S3-compatible in prod)
+PostgreSQL  +  ActiveStorage (local disk in development)
         │
 Solid Queue (background jobs, DB-backed — no Redis)
 ```
@@ -23,7 +23,7 @@ Solid Queue (background jobs, DB-backed — no Redis)
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Language | Ruby 3.4.x, YJIT enabled | Ruby 4.0 exists but its JIT (ZJIT) is still experimental; 3.4 + YJIT is the current production-recommended combination. |
+| Language | Ruby 3.4.x, YJIT enabled | Ruby 4.0 exists but its JIT (ZJIT) is still experimental; 3.4 + YJIT is the recommended combination. |
 | Framework | Rails 8.1.x | Latest stable as of mid-2026. |
 | Database | PostgreSQL 16+ | Same as AMS — via Docker Desktop locally. |
 | Auth | Devise 5.x | Confirmed Rails 8 compatible. |
@@ -157,11 +157,7 @@ Solid Queue job enqueued when a request transitions to `dean_approved`. For the 
 - **Request specs:** one per role's key action (student submits, supervisor approves/reverts/rejects, dean approves/reverts/rejects) — verifying both the happy path and that Pundit actually blocks the wrong role.
 - **System specs (Capybara):** the full Path A lifecycle (submit → supervisor approve → dean approve → points visible) and Path B (supervisor-initiated → dean approve).
 
-## 9. Deployment (deferred)
-
-Not building this yet, per your call to reach a reasonable stage first — but worth knowing now: **Rails 8 ships with Kamal**, a deployment tool built for exactly this — Docker-based deploys to any VPS, which lines up with the Docker Desktop experience you already have. When you're ready, this is the natural next step rather than reaching for Vercel-style platforms that don't fit a Rails monolith as cleanly.
-
-## 10. Confirmed Defaults
+## 9. Confirmed Defaults
 
 1. **Ruby version manager:** `rbenv`.
 2. **Enum backing values:** strings, not integers — `enum :status, { submitted: "submitted", supervisor_approved: "supervisor_approved", ... }`. Costs nothing and reads correctly in `psql`/DBeaver without a lookup table in your head.

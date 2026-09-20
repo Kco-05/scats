@@ -2,7 +2,7 @@
 
 Final — supersedes the earlier draft of this file. Everything below reflects confirmed answers, not open questions.
 
-Deployed on Render. Phase A is three small, independent fixes — do them in any order, today. Phase B is one continuous, sequenced rebuild of the review workflow — don't interleave it with unrelated work, and don't skip the "additive first, cutover later" ordering given production traffic depends on the old columns until Step B4.
+Phase A is three small, independent fixes — do them in any order, today. Phase B is one continuous, sequenced rebuild of the review workflow — don't interleave it with unrelated work, and don't skip the "additive first, cutover later" ordering given existing data still depends on the old columns until Step B4.
 
 ---
 
@@ -35,7 +35,7 @@ Reuses the `Permission` table below — this is the concrete first use of it, no
 
 One continuous rebuild. Do these in order; each step depends on the last actually working, not just being written.
 
-### B1. Additive schema (safe to deploy standalone — nothing reads from these tables yet)
+### B1. Additive schema (safe to land standalone — nothing reads from these tables yet)
 
 **Prompt:**
 > Create three models/migrations:
@@ -48,9 +48,9 @@ One continuous rebuild. Do these in order; each step depends on the last actuall
 ### B2. Data migration — backfill from existing columns
 
 **Prompt:**
-> Write a data migration: for every existing `Division`, create a `HierarchyStep` (Dean role, position 1) and a `RoleAssignment` from its current `dean_user_id`. For every existing `SubDivision`, create a `HierarchyStep` (Supervisor role, position 1, `can_raise_on_behalf: true`) and a `RoleAssignment` from its current `supervisor_user_id`. After this runs, the new tables exactly mirror current production state — but nothing user-facing changes yet, the app still reads the old columns.
+> Write a data migration: for every existing `Division`, create a `HierarchyStep` (Dean role, position 1) and a `RoleAssignment` from its current `dean_user_id`. For every existing `SubDivision`, create a `HierarchyStep` (Supervisor role, position 1, `can_raise_on_behalf: true`) and a `RoleAssignment` from its current `supervisor_user_id`. After this runs, the new tables exactly mirror existing data — but nothing user-facing changes yet, the app still reads the old columns.
 
-**Expected output:** in Rails console on the actual production data (or a copy of it), every division/sub-division has exactly one corresponding `RoleAssignment`, matching `dean_user_id`/`supervisor_user_id` 1:1.
+**Expected output:** in Rails console on the existing data (or a copy of it), every division/sub-division has exactly one corresponding `RoleAssignment`, matching `dean_user_id`/`supervisor_user_id` 1:1.
 
 ### B3. The resolver — build and verify in isolation before touching the live state machine
 
@@ -87,9 +87,9 @@ The biggest step. `AchievementRequest`'s fixed `status` enum and the `dean_appro
 > - A person holding any `division`-scoped role cannot hold any other role anywhere — no other division-scoped role, no sub-division-scoped role, and not the same role for a second division.
 > - A person holding a `sub_division`-scoped role can hold that *same* role type across other sub-divisions, but never a different role type anywhere else, division- or sub-division-scoped.
 
-### B7. Drop the old columns — separate, later deploy, only after B4–B6 are confirmed working in production
+### B7. Drop the old columns — separate, later step, only after B4–B6 are confirmed working
 
 **Prompt:**
 > Remove `divisions.dean_user_id` and `sub_divisions.supervisor_user_id`, and any remaining code paths that reference them directly instead of going through `RoleAssignment`.
 
-Don't bundle this with B4's deploy. Keep a rollback path available until the new resolver has actually handled real production traffic without issues.
+Don't bundle this with B4. Keep a rollback path available until the new resolver has actually handled real request traffic without issues.

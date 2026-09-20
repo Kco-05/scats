@@ -175,4 +175,4 @@ Now open the folder in Cursor.
 
 ---
 
-Once Milestone 12 is done, you have a working local MVP matching the PRD end to end. Deployment (Kamal, per TRD §9) is a deliberately separate, later step — not part of this plan.
+Once Milestone 12 is done, you have a working local MVP matching the PRD end to end.

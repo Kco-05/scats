@@ -20,7 +20,7 @@ SCATS is a Rails application for institutes to record verified student achieveme
 - **Admin console** — users (CSV import), departments, divisions / sub-divisions / categories (archive), review roles, role assignments, hierarchy templates, reason templates, settings  
 - **Role permissions** — profile self-edit toggles; per review-role permission to create/import students  
 - **Faculty student create / CSV import** — gated by review-role flags and live assignments  
-- **Notifications & email** — in-app student notifications on approval; Action Mailer for review events (works in development with `.env`; production SMTP is not wired yet)  
+- **Notifications & email** — in-app student notifications on approval; Action Mailer for review events (works in development with `.env`)  
 - **Unsaved-changes guard** — leave confirm (Stay / Discard / Save & exit) on save surfaces  
 
 ---
@@ -37,7 +37,6 @@ SCATS is a Rails application for institutes to record verified student achieveme
 | Frontend | Hotwire (Turbo + Stimulus), Tailwind CSS, Importmap |
 | Jobs / cache | Solid Queue, Solid Cache (primary DB) |
 | Uploads | Active Storage |
-| Deploy | Docker + Render blueprint (`render.yaml`) |
 | Tests | RSpec, Capybara |
 
 ---
@@ -131,17 +130,9 @@ cp .env.example .env
 
 | Variable | Purpose |
 | --- | --- |
-| `GMAIL_USERNAME` / `GMAIL_APP_PASSWORD` | Development SMTP only (`config/environments/development.rb`). Production mail is not configured. |
-| `DATABASE_URL` | Production / Render Postgres URL |
-| `RAILS_MASTER_KEY` | Decrypt `config/credentials` (required in production / Docker) |
-| `RAILS_ENV` | `development` locally; `production` on Render |
-| `SOLID_QUEUE_IN_PUMA` | Run Solid Queue inside Puma (set on Render) |
+| `GMAIL_USERNAME` / `GMAIL_APP_PASSWORD` | Development SMTP (`config/environments/development.rb`) |
 
-Development uses Compose Postgres (`config/database.yml`). Production uses a single `DATABASE_URL` for app, queue, and cache tables.
-
-### Credentials
-
-Production needs `RAILS_MASTER_KEY` matching `config/master.key` (or the credentials key used to build the image). Do not commit secrets.
+Development uses Compose Postgres (`config/database.yml`). Do not commit `.env` or secrets.
 
 ---
 
@@ -161,30 +152,6 @@ bundle exec rspec spec/requests/faculty/student_create_spec.rb
 
 ---
 
-## Deployment (Render)
-
-Blueprint: [`render.yaml`](render.yaml) — Docker web service + Postgres (`scats` / `scats-db`), typically from the `nitkbrc/PerfTrack` remote.
-
-1. Connect the GitHub repo in Render (Blueprint or existing service).  
-2. Set **`RAILS_MASTER_KEY`**.  
-3. Deploy; run migrations against production if the release process does not already:
-
-   ```bash
-   RAILS_ENV=production DATABASE_URL='postgresql://…?sslmode=require' bin/rails db:migrate
-   ```
-
-4. Optional: `bin/rails db:seed` only for demo environments (avoid on real production data).
-
-**Notes that matter in practice**
-
-- Free Render web and Postgres sleep when idle and are region-limited; first requests and cross-region latency can feel slow. That is hosting capacity, not missing app bootstrapping.
-- Uploads use Active Storage **disk** (`config.active_storage.service = :local`). Redeploys can drop profile photos and proof files even though the database rows remain. Object storage (S3) is not configured.
-- Review emails will **not** leave Render until production SMTP and the matching env vars are added. In-app notifications still work.
-
-Health check: `GET /up`.
-
----
-
 ## Repository layout (high level)
 
 ```text
@@ -197,21 +164,8 @@ app/
 config/
 db/migrate/ db/seeds.rb
 spec/
-render.yaml        # Render blueprint
 docker-compose.yml # Local Postgres 16
-Dockerfile         # Production image
 ```
-
----
-
-## Remotes
-
-This codebase is often pushed to both:
-
-- Application fork / working remote (e.g. `origin`)  
-- Institute remote (e.g. `brcSir` → `nitkbrc/PerfTrack`)
-
-Keep `main` in sync on both when releasing.
 
 ---
 
